@@ -4,6 +4,7 @@
   "inputDirPath": "__testDir/inputDir",
   "readyFileName": "ready.netconf",
   "dataFileName": "data.netconf",
+  "appAuthToken": "testAppToken",
   "logging": {
     "logActions": true,
     "info": {

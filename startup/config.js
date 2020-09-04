@@ -14,6 +14,7 @@ module.exports = async function () {
 
   throwIfConfigDoesNotExist("socketDirPath");
   throwIfConfigDoesNotExist("socketFileName");
+  throwIfConfigDoesNotExist("appAuthToken");
 
   //#endregion ========== CUSTOM CONFIG PROPERTIES ==========
 

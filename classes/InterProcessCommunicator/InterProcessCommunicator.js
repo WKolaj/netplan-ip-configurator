@@ -5,11 +5,38 @@ const logger = require("../../logger/logger");
 const {
   checkIfFileExistsAsync,
   removeFileOrDirectoryAsync,
+  isValidJson,
 } = require("../../utilities/utilities");
 const config = require("config");
+const Joi = require("joi");
 
 /**
- * @description class for exchanging data with other processes via file exchange
+ * @description schema for communication message
+ */
+const messageSchema = Joi.object({
+  token: Joi.string().required(),
+  message: Joi.object().required(),
+});
+
+/**
+ * @description Method for deciding whether message should be permitted to process or not - token should exists and be valid
+ * @param {Object} message Message in form of a JSON
+ */
+const permitMessage = (message) => {
+  let result = messageSchema.validate(message);
+  if (result.error) return false;
+  if (message.token !== appAuthToken) return false;
+
+  return true;
+};
+
+/**
+ * @description token used for authorization
+ */
+const appAuthToken = config.get("appAuthToken");
+
+/**
+ * @description class for exchanging data with other processes via local socket
  */
 class InterProcessCommunicator {
   constructor() {
@@ -22,26 +49,49 @@ class InterProcessCommunicator {
     this._comServer = null;
   }
 
+  /**
+   *
+   * @param {*} message
+   */
+
+  /**
+   * @description inter process communication server
+   */
   get ComServer() {
     return this._comServer;
   }
 
+  /**
+   * @description socket directory path
+   */
   get SocketDirPath() {
     return this._socketDirPath;
   }
 
+  /**
+   * @description socket file name
+   */
   get SocketFileName() {
     return this._socketFileName;
   }
 
+  /**
+   * @description socket file path
+   */
   get SocketFilePath() {
     return this._socketFilePath;
   }
 
+  /**
+   * @description Event emitter
+   */
   get EventEmitter() {
     return this._eventEmitter;
   }
 
+  /**
+   * @description Method for starting inter process communication
+   */
   start = async () => {
     if (!this.ComServer) {
       let self = this;
@@ -58,6 +108,7 @@ class InterProcessCommunicator {
           content += buf.toString();
         });
 
+        //Handling error during communication
         stream.on("error", self._handleDataInputError);
 
         //On stream end - invoke data input change
@@ -68,19 +119,37 @@ class InterProcessCommunicator {
     }
   };
 
+  /**
+   * @description Method for handling data input - on the end of exchange process
+   */
   _handleDataInput = (data) => {
     try {
+      //exiting if data is not a valid json
+      if (!isValidJson(data)) return;
+
       let jsonData = JSON.parse(data);
-      this.EventEmitter.emit("data", jsonData);
+
+      //Emit data only in if message is valid
+      if (permitMessage(jsonData)) {
+        //Emitting 'data' event on the end of data collecting
+        this.EventEmitter.emit("data", jsonData.message);
+      }
     } catch (err) {
       logger.error(err.message, err);
     }
   };
 
+  /**
+   * @description Method for handling error during communication
+   * @param {Object} err communication error
+   */
   _handleDataInputError = (err) => {
     logger.error(err.message, err);
   };
 
+  /**
+   * @description Method for stopping the interchange communication
+   */
   stop = () => {
     if (this.ComServer) {
       this.ComServer.close();

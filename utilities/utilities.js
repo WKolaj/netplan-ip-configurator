@@ -313,3 +313,12 @@ module.exports.applyJSONParsingToRoute = function (express, router) {
   //assigning JSON parsing error validation
   router.use(require("../middleware/jsonParsingError"));
 };
+
+module.exports.isValidJson = (str) => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
