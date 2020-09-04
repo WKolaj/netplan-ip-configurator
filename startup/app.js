@@ -32,7 +32,7 @@ module.exports = async function (workingDirName) {
   //#region ========== INITIALIZING INPUT DATA MANAGER ==========
 
   const interProcessCommunicator = new InterProcessCommunicator();
-  interProcessCommunicator.EventEmitter.on("data", onDataInput);
+  interProcessCommunicator.OnDataInput = onDataInput;
   interProcessCommunicator.start();
 
   log.info("input data manager initialized");

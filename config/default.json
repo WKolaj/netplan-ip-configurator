@@ -1,7 +1,7 @@
 {
   "netplanDirPath": "/etc/netplan",
   "netplanFileName": "00-installer-config.yaml",
-  "socketDirPath": "/home/wk/Documents/netplan-configurator-input",
+  "socketDirPath": "ipc",
   "socketFileName": "data.socket",
   "logging": {
     "logActions": true,

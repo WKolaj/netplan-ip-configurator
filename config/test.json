@@ -1,9 +1,8 @@
 {
   "netplanDirPath": "__testDir/netplanDir/netplan",
   "netplanFileName": "testConfigYamlFile.yaml",
-  "inputDirPath": "__testDir/inputDir",
-  "readyFileName": "ready.netconf",
-  "dataFileName": "data.netconf",
+  "socketDirPath": "__testDir/ipc",
+  "socketFileName": "data.socket",
   "appAuthToken": "testAppToken",
   "logging": {
     "logActions": true,

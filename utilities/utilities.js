@@ -314,6 +314,10 @@ module.exports.applyJSONParsingToRoute = function (express, router) {
   router.use(require("../middleware/jsonParsingError"));
 };
 
+/**
+ * @description Method for checking whether object is a valid JSON
+ * @param {String} str json string to parse
+ */
 module.exports.isValidJson = (str) => {
   try {
     JSON.parse(str);

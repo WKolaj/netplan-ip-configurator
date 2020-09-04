@@ -44,15 +44,23 @@ class InterProcessCommunicator {
     this._socketFileName = config.get("socketFileName");
     this._socketFilePath = path.join(this.SocketDirPath, this.SocketFileName);
 
-    this._eventEmitter = new events.EventEmitter();
-
     this._comServer = null;
+    this._onDataInput = null;
   }
 
   /**
-   *
-   * @param {*} message
+   * @description Method called on data came async(data)
    */
+  get OnDataInput() {
+    return this._onDataInput;
+  }
+
+  /**
+   * @description Method called on data came async(data)
+   */
+  set OnDataInput(value) {
+    this._onDataInput = value;
+  }
 
   /**
    * @description inter process communication server
@@ -83,13 +91,6 @@ class InterProcessCommunicator {
   }
 
   /**
-   * @description Event emitter
-   */
-  get EventEmitter() {
-    return this._eventEmitter;
-  }
-
-  /**
    * @description Method for starting inter process communication
    */
   start = async () => {
@@ -112,7 +113,7 @@ class InterProcessCommunicator {
         stream.on("error", self._handleDataInputError);
 
         //On stream end - invoke data input change
-        stream.on("end", () => self._handleDataInput(content));
+        stream.on("end", async () => await self._handleDataInput(content));
       });
 
       this.ComServer.listen(self.SocketFilePath);
@@ -122,7 +123,7 @@ class InterProcessCommunicator {
   /**
    * @description Method for handling data input - on the end of exchange process
    */
-  _handleDataInput = (data) => {
+  _handleDataInput = async (data) => {
     try {
       //exiting if data is not a valid json
       if (!isValidJson(data)) return;
@@ -131,8 +132,8 @@ class InterProcessCommunicator {
 
       //Emit data only in if message is valid
       if (permitMessage(jsonData)) {
-        //Emitting 'data' event on the end of data collecting
-        this.EventEmitter.emit("data", jsonData.message);
+        //Firing method 'OnDataInput' event on the end of data collecting
+        if (this.OnDataInput) await this.OnDataInput(jsonData.message);
       }
     } catch (err) {
       logger.error(err.message, err);
@@ -145,16 +146,6 @@ class InterProcessCommunicator {
    */
   _handleDataInputError = (err) => {
     logger.error(err.message, err);
-  };
-
-  /**
-   * @description Method for stopping the interchange communication
-   */
-  stop = () => {
-    if (this.ComServer) {
-      this.ComServer.close();
-      this._comServer = null;
-    }
   };
 }
 
