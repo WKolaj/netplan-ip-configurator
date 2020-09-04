@@ -1,11 +1,11 @@
 const log = require("../logger/logger");
 const {
-  InputDataManager,
-} = require("../classes/InputDataManager/InputDataManager");
+  InterProcessCommunicator,
+} = require("../classes/InterProcessCommunicator/InterProcessCommunicator");
 const path = require("path");
 
 const onDataInput = (data) => {
-  console.log(JSON.stringify(data));
+  console.log(data);
 };
 
 //Main method for initializing whole application
@@ -31,9 +31,9 @@ module.exports = async function (workingDirName) {
 
   //#region ========== INITIALIZING INPUT DATA MANAGER ==========
 
-  const inputDataManager = new InputDataManager();
-  inputDataManager.EventEmitter.on("dataInput", onDataInput);
-  inputDataManager.start();
+  const interProcessCommunicator = new InterProcessCommunicator();
+  interProcessCommunicator.EventEmitter.on("data", onDataInput);
+  interProcessCommunicator.start();
 
   log.info("input data manager initialized");
 

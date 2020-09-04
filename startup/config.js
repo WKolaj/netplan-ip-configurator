@@ -12,12 +12,8 @@ module.exports = async function () {
 
   //#region ========== CUSTOM CONFIG PROPERTIES ==========
 
-  throwIfConfigDoesNotExist("fileRefreshInterval");
-  throwIfConfigDoesNotExist("netplanDirPath");
-  throwIfConfigDoesNotExist("netplanFileName");
-  throwIfConfigDoesNotExist("inputDirPath");
-  throwIfConfigDoesNotExist("dataFileName");
-  throwIfConfigDoesNotExist("doneFileName");
+  throwIfConfigDoesNotExist("socketDirPath");
+  throwIfConfigDoesNotExist("socketFileName");
 
   //#endregion ========== CUSTOM CONFIG PROPERTIES ==========
 

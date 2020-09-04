@@ -1,11 +1,8 @@
 {
-  "fileRefreshInterval": 2000,
   "netplanDirPath": "/etc/netplan",
   "netplanFileName": "00-installer-config.yaml",
-  "inputDirPath": "/home/wk/Documents/netplan-configurator-input",
-  "readyFileName": "ready.netconf",
-  "doneFileName": "done.netconf",
-  "dataFileName": "data.json",
+  "socketDirPath": "/home/wk/Documents/netplan-configurator-input",
+  "socketFileName": "data.socket",
   "logging": {
     "logActions": true,
     "info": {
