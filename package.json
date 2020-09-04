@@ -1,0 +1,35 @@
+{
+  "name": "netplan-ip-configurator",
+  "version": "0.0.1",
+  "description": "Module for changing ip address using netplan",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WKolaj/netplan-ip-configurator.git"
+  },
+  "keywords": [
+    "Netplan",
+    "IP"
+  ],
+  "author": "WK",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/WKolaj/netplan-ip-configurator/issues"
+  },
+  "homepage": "https://github.com/WKolaj/netplan-ip-configurator#readme",
+  "dependencies": {
+    "config": "^3.3.1",
+    "ip": "^1.1.5",
+    "joi": "^17.2.1",
+    "js-yaml": "^3.14.0",
+    "lodash": "^4.17.20",
+    "winston": "^3.3.3"
+  }
+}
