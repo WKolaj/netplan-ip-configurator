@@ -1,5 +1,5 @@
 {
-  "netplanDirPath": "__testDir/netplanDir/netplan",
+  "netplanDirPath": "__testDir/netplanDir",
   "netplanFileName": "testConfigYamlFile.yaml",
   "socketDirPath": "__testDir/ipc",
   "socketFileName": "data.socket",

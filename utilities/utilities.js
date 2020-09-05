@@ -1,6 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const { promisify } = require("util");
+const yaml = require("js-yaml");
+const ip = require("ip");
+const { exec } = require("child_process");
 
 /**
  * Reads all the text in a readable stream and returns it as a string,
@@ -325,4 +328,48 @@ module.exports.isValidJson = (str) => {
     return false;
   }
   return true;
+};
+
+/**
+ * @description Method for geting ip and subnet based on cidr
+ * @param {String} cidrIP cidr
+ */
+module.exports.getIPAndSubnetMaskFromCidr = (cidrIP) => {
+  let cidrSubnet = ip.cidrSubnet(cidrIP);
+  let subnetMask = cidrSubnet.subnetMask;
+  let ipAddress = cidrIP.split("/")[0];
+
+  return {
+    ipAddress,
+    subnetMask,
+  };
+};
+
+/**
+ * @description Method for getting CIDR from ip and subnet mask
+ * @param {String} ipAddress IP address
+ * @param {String} subnetMask subnet maks
+ */
+module.exports.getCidrFromIPAndSubnetMask = (ipAddress, subnetMask) => {
+  let subnet = ip.subnet(ipAddress, subnetMask);
+
+  return `${ipAddress}/${subnet.subnetMaskLength}`;
+};
+
+module.exports.execAsync = promisify(exec);
+
+/**
+ * @description Method for converting Yaml to JSON
+ * @param {string} yamlContent yaml content
+ */
+module.exports.convertYamlToJSON = function (yamlContent) {
+  return yaml.safeLoad(yamlContent);
+};
+
+/**
+ * @description Method for converting JSON to Yaml
+ * @param {string} JSONContent JSON content
+ */
+module.exports.convertJSONToYaml = function (JSONContent) {
+  return yaml.safeDump(JSONContent);
 };
