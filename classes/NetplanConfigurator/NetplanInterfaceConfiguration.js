@@ -70,9 +70,14 @@ class NetplanInterfaceConfiguration {
 
     if (interfaceConfigurationContent.addresses) {
       let address = interfaceConfigurationContent.addresses[0];
-      let { ipAddress, subnetMask } = getIPAndGatewayFromCidr(address);
-      this._ipAddress = ipAddress;
-      this._subnetMask = subnetMask;
+      try {
+        let { ipAddress, subnetMask } = getIPAndGatewayFromCidr(address);
+        this._ipAddress = ipAddress;
+        this._subnetMask = subnetMask;
+      } catch (err) {
+        this._ipAddress = "";
+        this._subnetMask = "";
+      }
     }
 
     if (interfaceConfigurationContent.gateway4) {

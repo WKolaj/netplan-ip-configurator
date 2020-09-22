@@ -4,8 +4,14 @@ const {
 } = require("../classes/InterProcessCommunicator/InterProcessCommunicator");
 const path = require("path");
 
-const onDataInput = (data) => {
+const onDataInput = async (data) => {
   console.log(data);
+
+  return "Data exchanged successfully!";
+};
+
+const onDataOutput = async () => {
+  return { data: "New data send to client" };
 };
 
 //Main method for initializing whole application
@@ -33,6 +39,7 @@ module.exports = async function (workingDirName) {
 
   const interProcessCommunicator = new InterProcessCommunicator();
   interProcessCommunicator.OnDataInput = onDataInput;
+  interProcessCommunicator.OnDataOutput = onDataOutput;
   interProcessCommunicator.start();
 
   log.info("input data manager initialized");

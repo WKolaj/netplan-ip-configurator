@@ -1,4 +1,4 @@
-const net = require("net");
+const http = require("http");
 const path = require("path");
 const events = require("events");
 const logger = require("../../logger/logger");
@@ -19,13 +19,23 @@ const messageSchema = Joi.object({
 });
 
 /**
- * @description Method for deciding whether message should be permitted to process or not - token should exists and be valid
- * @param {Object} message Message in form of a JSON
+ * @description Method for deciding whether request should be permitted to process or not - token should exists in header and be valid
+ * @param {Object} request Request to check
  */
-const permitMessage = (message) => {
-  let result = messageSchema.validate(message);
-  if (result.error) return false;
-  if (message.token !== appAuthToken) return false;
+const permitRequest = (request) => {
+  let authToken = request.headers["x-auth-token"];
+  if (authToken !== appAuthToken) return false;
+
+  return true;
+};
+
+/**
+ * @description Method for checking if request has JSON Content-Type
+ * @param {Object} request Request to check
+ */
+const isRequestJSON = (request) => {
+  let contentType = request.headers["content-type"];
+  if (contentType !== "application/json") return false;
 
   return true;
 };
@@ -46,20 +56,35 @@ class InterProcessCommunicator {
 
     this._comServer = null;
     this._onDataInput = null;
+    this._onDataOutput = null;
   }
 
   /**
-   * @description Method called on data came async(data)
+   * @description Method called on data came async(data) - POST
    */
   get OnDataInput() {
     return this._onDataInput;
   }
 
   /**
-   * @description Method called on data came async(data)
+   * @description Method called on data came async(data) - POST
    */
   set OnDataInput(value) {
     this._onDataInput = value;
+  }
+
+  /**
+   * @description Method called on data leave async(data) - GET
+   */
+  get OnDataOutput() {
+    return this._onDataOutput;
+  }
+
+  /**
+   * @description Method called on data leave async(data) - GET
+   */
+  set OnDataOutput(value) {
+    this._onDataOutput = value;
   }
 
   /**
@@ -101,19 +126,51 @@ class InterProcessCommunicator {
       if (await checkIfFileExistsAsync(self.SocketFilePath))
         await removeFileOrDirectoryAsync(self.SocketFilePath);
 
-      this._comServer = net.createServer(function (stream) {
-        let content = "";
+      this._comServer = http.createServer(function (request, response) {
+        //Checking auth token
+        if (!permitRequest(request)) {
+          response.statusCode = 403;
+          return response.end("Access forbidden.");
+        }
 
+        //Checking if content type is valid
+        if (!isRequestJSON(request)) {
+          response.statusCode = 400;
+          return response.end("Invalid data format.");
+        }
+
+        let content = "";
         //On every piece of data - extend content
-        stream.on("data", (buf) => {
+        request.on("data", (buf) => {
           content += buf.toString();
         });
 
         //Handling error during communication
-        stream.on("error", self._handleDataInputError);
+        request.on("error", self._handleDataInputError);
 
         //On stream end - invoke data input change
-        stream.on("end", async () => await self._handleDataInput(content));
+        request.on("end", async () => {
+          //Invoking data input handler - based on method
+          if (request.method === "POST") {
+            //exiting if content is not a valid json
+            if (!isValidJson(content)) {
+              response.code = 400;
+              return response.end("Invalid data");
+            }
+
+            let result = await self._handleDataInput(content);
+            response.statusCode = 200;
+            return response.end(result);
+          } else if (request.method === "GET") {
+            let result = await self._handleDataOutput();
+            response.statusCode = 200;
+            response.setHeader("content-type", "application/json");
+            return response.end(JSON.stringify(result));
+          } else {
+            response.statusCode = 400;
+            return response.end("invalid http function");
+          }
+        });
       });
 
       this.ComServer.listen(self.SocketFilePath);
@@ -121,20 +178,28 @@ class InterProcessCommunicator {
   };
 
   /**
-   * @description Method for handling data input - on the end of exchange process
+   * @description Method for handling data input - on the end of exchange process - POST
    */
   _handleDataInput = async (data) => {
     try {
-      //exiting if data is not a valid json
-      if (!isValidJson(data)) return;
-
       let jsonData = JSON.parse(data);
 
-      //Emit data only in if message is valid
-      if (permitMessage(jsonData)) {
-        //Firing method 'OnDataInput' event on the end of data collecting
-        if (this.OnDataInput) await this.OnDataInput(jsonData.message);
-      }
+      //Firing method 'OnDataInput' event on the end of data collecting
+      if (this.OnDataInput) return this.OnDataInput(jsonData);
+      else return {};
+    } catch (err) {
+      logger.error(err.message, err);
+    }
+  };
+
+  /**
+   * @description Method for handling data output - on the end of exchange process - GET
+   */
+  _handleDataOutput = async () => {
+    try {
+      //Firing method 'OnDataOutput' event on the end of data collecting
+      if (this.OnDataOutput) return this.OnDataOutput();
+      else return {};
     } catch (err) {
       logger.error(err.message, err);
     }
@@ -145,6 +210,14 @@ class InterProcessCommunicator {
    * @param {Object} err communication error
    */
   _handleDataInputError = (err) => {
+    logger.error(err.message, err);
+  };
+
+  /**
+   * @description Method for handling error during communication
+   * @param {Object} err communication error
+   */
+  _handleDataOutputError = (err) => {
     logger.error(err.message, err);
   };
 }

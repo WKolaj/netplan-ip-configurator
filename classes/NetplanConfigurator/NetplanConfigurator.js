@@ -21,7 +21,7 @@ const Joi = require("joi");
 const NetplanConfiguratorSchema = Joi.object({
   dirPath: Joi.string().min(1).required(),
   fileName: Joi.string().min(1).required(),
-  interfaces: Joi.array().items(NetplanInterfaceConfigurationSchema),
+  interfaces: Joi.array().items(NetplanInterfaceConfigurationSchema).required(),
 });
 
 /**
@@ -99,8 +99,6 @@ class NetplanConfigurator {
    * @description Method for getting content from file - returns null if there is no file
    */
   async _getContentFromFile() {
-    this._content = {};
-
     //Exit stright away if there was no dir path specified
     if (!this.DirPath) return null;
 
