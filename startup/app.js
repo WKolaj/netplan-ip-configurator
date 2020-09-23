@@ -11,7 +11,7 @@ const onDataInput = async (data) => {
 };
 
 const onDataOutput = async () => {
-  return { data: "New data send to client" };
+  return { data: "New data send to client 1" };
 };
 
 //Main method for initializing whole application

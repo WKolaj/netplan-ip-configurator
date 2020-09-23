@@ -1,5 +1,6 @@
 const config = require("config");
 const path = require("path");
+const appAuthToken = config.get("appAuthToken");
 const socketDirPath = config.get("socketDirPath");
 const socketFileName = config.get("socketFileName");
 const socketFilePath = path.join(socketDirPath, socketFileName);
@@ -11,6 +12,7 @@ const {
 const {
   writeDataToStreamAndWaitForEnd,
   sendDataToSocket,
+  sendHTTPPostToSocket,
 } = require("../utilities/testUtilities");
 const {
   InterProcessCommunicator,
@@ -54,7 +56,7 @@ describe("InterProcessCommunicator", () => {
     });
   });
 
-  describe("data event", () => {
+  describe("onDataInput", () => {
     let message1JSONContent;
     let message1Content;
     let message2JSONContent;
@@ -63,44 +65,65 @@ describe("InterProcessCommunicator", () => {
     let message3Content;
     let interProcessCommunicator;
     let onDataInputMockFunc;
+    let onDataInputResolvedValue;
     let sendData1;
+    let sendHeaders1;
     let sendData2;
+    let sendHeaders2;
     let sendData3;
+    let sendHeaders3;
+    let sendDataResult1;
+    let sendDataResult2;
+    let sendDataResult3;
 
     beforeEach(() => {
       sendData1 = true;
       message1JSONContent = {
-        token: "testAppToken",
-        message: {
-          abcd: 1234,
-          defg: "hjkl",
-        },
+        abcd: 1234,
+        defg: "hjkl",
       };
       message1Content = JSON.stringify(message1JSONContent);
+      sendHeaders1 = {
+        "x-auth-token": appAuthToken,
+        "content-type": "application/json",
+      };
+      sendDataResult1 = null;
 
       sendData2 = true;
       message2JSONContent = {
-        token: "testAppToken",
-        message: {
-          abcda: 12345,
-          defgd: "hjkle",
-        },
+        abcda: 12345,
+        defgd: "hjkle",
       };
       message2Content = JSON.stringify(message2JSONContent);
+      sendHeaders2 = {
+        "x-auth-token": appAuthToken,
+        "content-type": "application/json",
+      };
+      sendDataResult2 = null;
 
       sendData3 = true;
       message3JSONContent = {
-        token: "testAppToken",
-        message: {
-          abcda: 123455,
-          defgd: "hjklea",
-        },
+        abcda: 123455,
+        defgd: "hjklea",
       };
       message3Content = JSON.stringify(message3JSONContent);
+      sendHeaders3 = {
+        "x-auth-token": appAuthToken,
+        "content-type": "application/json",
+      };
+      sendDataResult3 = null;
 
       interProcessCommunicator = new InterProcessCommunicator();
 
-      onDataInputMockFunc = jest.fn();
+      onDataInputResolvedValue = {
+        test1: "abcd1234",
+        test2: "abcd",
+        test3: 1234,
+      };
+
+      onDataInputMockFunc = jest
+        .fn()
+        .mockResolvedValue(onDataInputResolvedValue);
     });
 
     afterEach(async () => {
@@ -112,28 +135,119 @@ describe("InterProcessCommunicator", () => {
       interProcessCommunicator.OnDataInput = onDataInputMockFunc;
       await interProcessCommunicator.start();
 
-      if (sendData1) await sendDataToSocket(socketFilePath, message1Content);
-      if (sendData2) await sendDataToSocket(socketFilePath, message2Content);
-      if (sendData3) await sendDataToSocket(socketFilePath, message3Content);
-
-      //waiting for stream events to be fired
-      await snooze(100);
+      if (sendData1)
+        sendDataResult1 = await sendHTTPPostToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders1,
+          message1Content
+        );
+      if (sendData2)
+        sendDataResult2 = await sendHTTPPostToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders2,
+          message2Content
+        );
+      if (sendData3)
+        sendDataResult3 = await sendHTTPPostToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders3,
+          message3Content
+        );
     };
 
-    it("should call OnDataInput if other process sends data", async () => {
+    it("should call OnDataInput if other process sends data - and send back OnDataInputResult", async () => {
       await exec();
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message2JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toBeDefined();
+      let result1 = JSON.parse(sendDataResult1);
+      expect(result1).toEqual(onDataInputResolvedValue);
+
+      expect(sendDataResult2).toBeDefined();
+      let result2 = JSON.parse(sendDataResult2);
+      expect(result2).toEqual(onDataInputResolvedValue);
+
+      expect(sendDataResult3).toBeDefined();
+      let result3 = JSON.parse(sendDataResult3);
+      expect(result3).toEqual(onDataInputResolvedValue);
+    });
+
+    it("should call OnDataInput if other process sends data - and send back OnDataInputResult - even if OnDataInput return empty object", async () => {
+      onDataInputResolvedValue = {};
+
+      onDataInputMockFunc = jest
+        .fn()
+        .mockResolvedValue(onDataInputResolvedValue);
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toBeDefined();
+      let result1 = JSON.parse(sendDataResult1);
+      expect(result1).toEqual(onDataInputResolvedValue);
+
+      expect(sendDataResult2).toBeDefined();
+      let result2 = JSON.parse(sendDataResult2);
+      expect(result2).toEqual(onDataInputResolvedValue);
+
+      expect(sendDataResult3).toBeDefined();
+      let result3 = JSON.parse(sendDataResult3);
+      expect(result3).toEqual(onDataInputResolvedValue);
+    });
+
+    it("should call OnDataInput if other process sends data - and send back OnDataInputResult - even if OnDataInput returns null", async () => {
+      onDataInputMockFunc = jest.fn().mockResolvedValue(null);
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toBeDefined();
+      expect(sendDataResult1).toEqual("null");
+
+      expect(sendDataResult2).toBeDefined();
+      expect(sendDataResult2).toEqual("null");
+
+      expect(sendDataResult3).toBeDefined();
+      expect(sendDataResult3).toEqual("null");
+    });
+
+    it("should call OnDataInput if other process sends data - and send back OnDataInputResult - even if OnDataInput returns nothing", async () => {
+      onDataInputMockFunc = jest.fn().mockResolvedValue();
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toBeDefined();
+      expect(sendDataResult1).toEqual("");
+
+      expect(sendDataResult2).toBeDefined();
+      expect(sendDataResult2).toEqual("");
+
+      expect(sendDataResult3).toBeDefined();
+      expect(sendDataResult3).toEqual("");
     });
 
     it("should call OnDataInput and not throw - even if start is called multiple times", async () => {
@@ -144,15 +258,9 @@ describe("InterProcessCommunicator", () => {
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message2JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
     });
 
     it("should call OnDataInput if other process sends data - even if socket file already exists", async () => {
@@ -162,91 +270,169 @@ describe("InterProcessCommunicator", () => {
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message2JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
-    it("should call OnDataInput if other process sends data - even if message is very long", async () => {
-      message1JSONContent = {
-        token: "testAppToken",
-        message: {
-          test: [],
-        },
-      };
-      for (let i = 0; i <= 1000000; i++) {
-        message1JSONContent.message.test.push(i);
-      }
-      message1Content = JSON.stringify(message1JSONContent);
+    // // //SHOULD BE TESTED MANUALLY!!
+    // // //Cannot be tested automatically - due to simultaneous acces to UNIX Socket with the same process (client + server) multiple times while sending parts of data
+    // // it("should call OnDataInput if other process sends data - even if message is very long", async () => {
+    // //   message1JSONContent = {
+    // //     test: [],
+    // //   };
+    // //   for (let i = 0; i <= 1000000; i++) {
+    // //     message1JSONContent.test.push(i);
+    // //   }
+    // //   message1Content = JSON.stringify(message1JSONContent);
 
-      await writeFileAsync(socketFilePath, "fakeContent");
+    // //   await exec();
+
+    // //   expect(onDataInputMockFunc).toHaveBeenCalledTimes(1);
+
+    // //   expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+    // //   expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+    // //   expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+    // // });
+
+    it("should call OnDataInput if other process sends data - but one of sending was invalid due to token", async () => {
+      sendHeaders2["x-auth-token"] = "fakeToken";
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Access forbidden.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
+    });
+
+    it("should call OnDataInput if other process sends data - but one sends empty data", async () => {
+      message2Content = "{}";
 
       await exec();
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message2JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual({});
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
-    it("should call OnDataInput if other process sends data - but one of sending was invalid due to token", async () => {
-      message2JSONContent.token = "fakeToken";
-      message2Content = JSON.stringify(message2JSONContent);
+    it("should call OnDataInput if other process sends data - but one sends empty data", async () => {
+      message2Content = "";
 
       await exec();
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
-    it("should call OnDataInput if other process sends data - but one of sending was invalid due to message", async () => {
-      message2JSONContent.message = "fakeMessage";
-      message2Content = JSON.stringify(message2JSONContent);
+    it("should call OnDataInput if other process sends data - but one sends null data", async () => {
+      message2Content = null;
 
       await exec();
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
-    it("should call OnDataInput if other process sends data - but one of sending was invalid due to whole message", async () => {
+    it("should call OnDataInput if other process sends data - but one sends undefined data", async () => {
+      message2Content = undefined;
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
+    });
+
+    it("should call OnDataInput if other process sends data - but one of sending was invalid due to message (string instead of JSON)", async () => {
       message2Content = "fakeMessage";
 
       await exec();
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
+    });
+
+    it("should call OnDataInput if other process sends data - but one of sending was invalid due to message (Invalid JSON)", async () => {
+      message2Content = "{ abcd : fakeMessage }";
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
+    });
+
+    it("should call OnDataInput if other process sends data - but one of sending was invalid due to content type header", async () => {
+      sendHeaders2["content-type"] = "fakeType";
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
+    });
+
+    it("should call OnDataInput if other process sends data - but one of sending was invalid due to lack of content type", async () => {
+      delete sendHeaders2["content-type"];
+
+      await exec();
+
+      expect(onDataInputMockFunc).toHaveBeenCalledTimes(2);
+
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual(JSON.stringify(onDataInputResolvedValue));
+      expect(sendDataResult2).toEqual("Invalid data format.");
+      expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
     it("should call OnDataInput if other process sends data - but OnDataInput throws during one invoke", async () => {
@@ -260,15 +446,13 @@ describe("InterProcessCommunicator", () => {
 
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(3);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(
-        message2JSONContent.message
-      );
-      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(
-        message3JSONContent.message
-      );
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
+      expect(onDataInputMockFunc.mock.calls[1][0]).toEqual(message2JSONContent);
+      expect(onDataInputMockFunc.mock.calls[2][0]).toEqual(message3JSONContent);
+
+      expect(sendDataResult1).toEqual("");
+      expect(sendDataResult2).toEqual("");
+      expect(sendDataResult3).toEqual("");
     });
 
     it("should not call OnDataInput if other process does not send any data", async () => {
@@ -290,33 +474,19 @@ describe("InterProcessCommunicator", () => {
 
       //Assinging onDataInputFunc and sending data again
       interProcessCommunicator.OnDataInput = onDataInputMockFunc;
-
-      await sendDataToSocket(socketFilePath, message1Content);
-
-      //waiting for stream events to be fired
-      await snooze(100);
-
+      await sendHTTPPostToSocket(
+        socketFilePath,
+        "/",
+        sendHeaders1,
+        message1Content
+      );
       expect(onDataInputMockFunc).toHaveBeenCalledTimes(1);
 
-      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(
-        message1JSONContent.message
-      );
-    });
-
-    it("should not call OnDataInput if message is invalid JSON", async () => {
-      message1JSONContent.token = "fakeToken";
-      message1Content = "invalidJSON";
-
-      sendData2 = false;
-      sendData3 = false;
-      await exec();
-
-      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(onDataInputMockFunc.mock.calls[0][0]).toEqual(message1JSONContent);
     });
 
     it("should not call OnDataInput if other process sends data but token is invalid", async () => {
-      message1JSONContent.token = "fakeToken";
-      message1Content = JSON.stringify(message1JSONContent);
+      sendHeaders1["x-auth-token"] = "fakeToken";
 
       sendData2 = false;
       sendData3 = false;
@@ -324,11 +494,12 @@ describe("InterProcessCommunicator", () => {
       await exec();
 
       expect(onDataInputMockFunc).not.toHaveBeenCalled();
+
+      expect(sendDataResult1).toEqual("Access forbidden.");
     });
 
     it("should not call OnDataInput if other process sends data but token in empty", async () => {
-      delete message1JSONContent.token;
-      message1Content = JSON.stringify(message1JSONContent);
+      delete sendHeaders1["x-auth-token"];
 
       sendData2 = false;
       sendData3 = false;
@@ -336,11 +507,12 @@ describe("InterProcessCommunicator", () => {
       await exec();
 
       expect(onDataInputMockFunc).not.toHaveBeenCalled();
+
+      expect(sendDataResult1).toEqual("Access forbidden.");
     });
 
     it("should not call OnDataInput if other process sends data but token null", async () => {
-      message1JSONContent.token = null;
-      message1Content = JSON.stringify(message1JSONContent);
+      sendHeaders1["x-auth-token"] = null;
 
       sendData2 = false;
       sendData3 = false;
@@ -348,42 +520,10 @@ describe("InterProcessCommunicator", () => {
       await exec();
 
       expect(onDataInputMockFunc).not.toHaveBeenCalled();
-    });
 
-    it("should not call OnDataInput if other process sends data but message is not a valid JSON", async () => {
-      message1JSONContent.message = "abcd1234";
-      message1Content = JSON.stringify(message1JSONContent);
-
-      sendData2 = false;
-      sendData3 = false;
-
-      await exec();
-
-      expect(onDataInputMockFunc).not.toHaveBeenCalled();
-    });
-
-    it("should not call OnDataInput if other process sends data but message is not defined", async () => {
-      delete message1JSONContent.message;
-      message1Content = JSON.stringify(message1JSONContent);
-
-      sendData2 = false;
-      sendData3 = false;
-
-      await exec();
-
-      expect(onDataInputMockFunc).not.toHaveBeenCalled();
-    });
-
-    it("should not call OnDataInput if other process sends data but message is null", async () => {
-      message1JSONContent.message = null;
-      message1Content = JSON.stringify(message1JSONContent);
-
-      sendData2 = false;
-      sendData3 = false;
-
-      await exec();
-
-      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(sendDataResult1).toEqual("Access forbidden.");
     });
   });
+
+  //TODO - add onDataOutput test
 });

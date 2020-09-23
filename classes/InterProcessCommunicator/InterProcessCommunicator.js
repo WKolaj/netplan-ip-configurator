@@ -133,12 +133,6 @@ class InterProcessCommunicator {
           return response.end("Access forbidden.");
         }
 
-        //Checking if content type is valid
-        if (!isRequestJSON(request)) {
-          response.statusCode = 400;
-          return response.end("Invalid data format.");
-        }
-
         let content = "";
         //On every piece of data - extend content
         request.on("data", (buf) => {
@@ -153,14 +147,14 @@ class InterProcessCommunicator {
           //Invoking data input handler - based on method
           if (request.method === "POST") {
             //exiting if content is not a valid json
-            if (!isValidJson(content)) {
+            if (!isRequestJSON(request) || !isValidJson(content)) {
               response.code = 400;
-              return response.end("Invalid data");
+              return response.end("Invalid data format.");
             }
 
             let result = await self._handleDataInput(content);
             response.statusCode = 200;
-            return response.end(result);
+            return response.end(JSON.stringify(result));
           } else if (request.method === "GET") {
             let result = await self._handleDataOutput();
             response.statusCode = 200;
