@@ -89,3 +89,40 @@ module.exports.sendHTTPPostToSocket = async (
     }
   });
 };
+
+module.exports.sendHTTPPutToSocket = async (
+  socketPath,
+  route,
+  headers,
+  body
+) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let options = {
+        method: "PUT",
+        socketPath: socketPath,
+        path: route,
+        headers: headers,
+      };
+
+      let callback = function (response) {
+        var str = "";
+        response.on("data", function (chunk) {
+          str += chunk;
+        });
+
+        response.on("end", function () {
+          return resolve(str);
+        });
+
+        response.on("error", function (err) {
+          return reject(err);
+        });
+      };
+
+      http.request(options, callback).end(body);
+    } catch (err) {
+      return reject(err);
+    }
+  });
+};

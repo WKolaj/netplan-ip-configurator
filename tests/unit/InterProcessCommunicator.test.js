@@ -13,6 +13,8 @@ const {
   writeDataToStreamAndWaitForEnd,
   sendDataToSocket,
   sendHTTPPostToSocket,
+  sendHTTPGetToSocket,
+  sendHTTPPutToSocket,
 } = require("../utilities/testUtilities");
 const {
   InterProcessCommunicator,
@@ -330,7 +332,7 @@ describe("InterProcessCommunicator", () => {
       expect(sendDataResult3).toEqual(JSON.stringify(onDataInputResolvedValue));
     });
 
-    it("should call OnDataInput if other process sends data - but one sends empty data", async () => {
+    it("should call OnDataInput if other process sends data - but one sends empty string data", async () => {
       message2Content = "";
 
       await exec();
@@ -525,5 +527,319 @@ describe("InterProcessCommunicator", () => {
     });
   });
 
-  //TODO - add onDataOutput test
+  describe("onDataOutput", () => {
+    let message1JSONContent;
+    let message1Content;
+    let message2JSONContent;
+    let message2Content;
+    let message3JSONContent;
+    let message3Content;
+    let interProcessCommunicator;
+    let onDataOutputMockFunc;
+    let onDataOutputResolvedValue;
+    let sendData1;
+    let sendHeaders1;
+    let sendData2;
+    let sendHeaders2;
+    let sendData3;
+    let sendHeaders3;
+    let sendDataResult1;
+    let sendDataResult2;
+    let sendDataResult3;
+
+    beforeEach(() => {
+      sendData1 = true;
+      message1Content = JSON.stringify(message1JSONContent);
+      sendHeaders1 = {
+        "x-auth-token": appAuthToken,
+      };
+      sendDataResult1 = null;
+
+      sendData2 = true;
+      message2Content = JSON.stringify(message2JSONContent);
+      sendHeaders2 = {
+        "x-auth-token": appAuthToken,
+      };
+      sendDataResult2 = null;
+
+      sendData3 = true;
+      message3Content = JSON.stringify(message3JSONContent);
+      sendHeaders3 = {
+        "x-auth-token": appAuthToken,
+      };
+      sendDataResult3 = null;
+
+      interProcessCommunicator = new InterProcessCommunicator();
+
+      onDataOutputResolvedValue = {
+        test1: "abcd1234",
+        test2: "abcd",
+        test3: 1234,
+      };
+
+      onDataOutputMockFunc = jest
+        .fn()
+        .mockResolvedValue(onDataOutputResolvedValue);
+    });
+
+    afterEach(async () => {
+      if (interProcessCommunicator.ComServer)
+        await interProcessCommunicator.ComServer.close();
+    });
+
+    let exec = async () => {
+      interProcessCommunicator.OnDataOutput = onDataOutputMockFunc;
+      await interProcessCommunicator.start();
+
+      if (sendData1)
+        sendDataResult1 = await sendHTTPGetToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders1
+        );
+      if (sendData2)
+        sendDataResult2 = await sendHTTPGetToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders2
+        );
+      if (sendData3)
+        sendDataResult3 = await sendHTTPGetToSocket(
+          socketFilePath,
+          "/",
+          sendHeaders3
+        );
+    };
+
+    it("should call OnDataOutput if other process sends data - and send back OnDataOutputResult", async () => {
+      await exec();
+
+      expect(onDataOutputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(sendDataResult1).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+      expect(sendDataResult2).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+      expect(sendDataResult3).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+    });
+
+    // // //SHOULD BE TESTED MANUALLY!!
+    // // //Cannot be tested automatically - due to simultaneous acces to UNIX Socket with the same process (client + server) multiple times while sending parts of data
+    // it("should call OnDataOutput if other process sends data - and send back OnDataOutputResult - if message is large", async () => {
+    //   let message1JSONContent = {
+    //     test: [],
+    //   };
+    //   for (let i = 0; i <= 1000000; i++) {
+    //     message1JSONContent.test.push(i);
+    //   }
+    //   onDataOutputResolvedValue = message1JSONContent;
+
+    //   await exec();
+
+    //   expect(onDataOutputMockFunc).toHaveBeenCalledTimes(3);
+
+    //   expect(sendDataResult1).toEqual(
+    //     JSON.stringify(onDataOutputResolvedValue)
+    //   );
+    //   expect(sendDataResult2).toEqual(
+    //     JSON.stringify(onDataOutputResolvedValue)
+    //   );
+    //   expect(sendDataResult3).toEqual(
+    //     JSON.stringify(onDataOutputResolvedValue)
+    //   );
+    // });
+
+    it("should call OnDataOutput if other process sends data - and send back OnDataOutputResult - even if OnDataOutput return empty object", async () => {
+      onDataOutputResolvedValue = {};
+
+      onDataOutputMockFunc = jest
+        .fn()
+        .mockResolvedValue(onDataOutputResolvedValue);
+
+      await exec();
+
+      expect(onDataOutputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(sendDataResult1).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+      expect(sendDataResult2).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+      expect(sendDataResult3).toEqual(
+        JSON.stringify(onDataOutputResolvedValue)
+      );
+    });
+
+    it("should call OnDataOutput if other process sends data - and send back OnDataOutputResult - even if OnDataOutput returns null", async () => {
+      onDataOutputMockFunc = jest.fn().mockResolvedValue(null);
+
+      await exec();
+
+      expect(onDataOutputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(sendDataResult1).toEqual("null");
+      expect(sendDataResult2).toEqual("null");
+      expect(sendDataResult3).toEqual("null");
+    });
+
+    it("should not throw if OnDataOutput is not defined", async () => {
+      onDataOutputMockFunc = null;
+
+      await exec();
+
+      onDataOutputMockFunc = jest.fn();
+
+      //Assinging onDataOutputFunc and sending data again
+      interProcessCommunicator.OnDataOutput = onDataOutputMockFunc;
+      await sendHTTPGetToSocket(socketFilePath, "/", sendHeaders1);
+      expect(onDataOutputMockFunc).toHaveBeenCalledTimes(1);
+
+      expect(onDataOutputMockFunc.mock.calls[0][0]).toEqual(
+        message1JSONContent
+      );
+    });
+
+    it("should call OnDataOutput if other process sends data - but OnDataOutput throws during one invoke", async () => {
+      let invokeIndex = 0;
+      onDataOutputMockFunc = jest.fn(() => {
+        if (invokeIndex === 1) throw new Error("test error");
+        invokeIndex++;
+      });
+
+      await exec();
+
+      expect(onDataOutputMockFunc).toHaveBeenCalledTimes(3);
+
+      expect(sendDataResult1).toEqual("");
+      expect(sendDataResult2).toEqual("");
+      expect(sendDataResult3).toEqual("");
+    });
+
+    it("should not call OnDataOutput if other process sends data but token is invalid", async () => {
+      sendHeaders1["x-auth-token"] = "fakeToken";
+
+      sendData2 = false;
+      sendData3 = false;
+
+      await exec();
+
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(sendDataResult1).toEqual("Access forbidden.");
+    });
+
+    it("should not call OnDataOutput if other process sends data but token in empty", async () => {
+      delete sendHeaders1["x-auth-token"];
+
+      sendData2 = false;
+      sendData3 = false;
+
+      await exec();
+
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(sendDataResult1).toEqual("Access forbidden.");
+    });
+
+    it("should not call OnDataOutput if other process sends data but token null", async () => {
+      sendHeaders1["x-auth-token"] = null;
+
+      sendData2 = false;
+      sendData3 = false;
+
+      await exec();
+
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(sendDataResult1).toEqual("Access forbidden.");
+    });
+  });
+
+  describe("HTTP Other method than POST/GET", () => {
+    let message1JSONContent;
+    let message1Content;
+    let message2JSONContent;
+    let message2Content;
+    let message3JSONContent;
+    let message3Content;
+    let interProcessCommunicator;
+    let onDataOutputMockFunc;
+    let onDataInputMockFunc;
+    let headers;
+    let body;
+    let result;
+
+    beforeEach(() => {
+      interProcessCommunicator = new InterProcessCommunicator();
+
+      headers = {
+        "x-auth-token": appAuthToken,
+        "content-type": "application/json",
+      };
+
+      onDataOutputMockFunc = jest.fn();
+
+      onDataInputMockFunc = jest.fn();
+    });
+
+    afterEach(async () => {
+      if (interProcessCommunicator.ComServer)
+        await interProcessCommunicator.ComServer.close();
+    });
+
+    let exec = async () => {
+      interProcessCommunicator.OnDataOutput = onDataOutputMockFunc;
+      interProcessCommunicator.OnDataInput = onDataInputMockFunc;
+      await interProcessCommunicator.start();
+
+      result = await sendHTTPPutToSocket(socketFilePath, "/", headers, body);
+    };
+
+    it("should not call OnDataOutput or OnDataInput and send back proper result", async () => {
+      await exec();
+
+      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(result).toEqual("invalid http function");
+    });
+
+    it("should not call OnDataOutput or OnDataInput and send back proper result - if token was not specified", async () => {
+      delete headers["x-auth-token"];
+
+      await exec();
+
+      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(result).toEqual("Access forbidden.");
+    });
+
+    it("should not call OnDataOutput or OnDataInput and send back proper result - if token is invalid", async () => {
+      headers["x-auth-token"] = "fakeToken";
+
+      await exec();
+
+      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(result).toEqual("Access forbidden.");
+    });
+
+    it("should not call OnDataOutput or OnDataInput and send back proper result - if token is null", async () => {
+      headers["x-auth-token"] = null;
+
+      await exec();
+
+      expect(onDataInputMockFunc).not.toHaveBeenCalled();
+      expect(onDataOutputMockFunc).not.toHaveBeenCalled();
+
+      expect(result).toEqual("Access forbidden.");
+    });
+  });
 });
