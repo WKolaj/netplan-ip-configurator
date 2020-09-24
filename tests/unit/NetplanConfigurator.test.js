@@ -1,10 +1,22 @@
 const path = require("path");
 const config = require("config");
+
+//mocking child_process exec
+const child_proccess = require("child_process");
+const mockExec = jest.fn();
+child_proccess.exec = (command, callback) => {
+  mockExec(command);
+  callback();
+};
+
 const {
   clearDirectoryAsync,
   writeFileAsync,
   convertJSONToYaml,
+  convertYamlToJSON,
   removeFileOrDirectoryAsync,
+  readFileAsync,
+  snooze,
 } = require("../../utilities/utilities");
 const netplanDirPathFromConfig = config.get("netplanDirPath");
 const netplanFileNameFromConfig = config.get("netplanFileName");
@@ -16,6 +28,7 @@ const {
   NetplanConfigurator,
 } = require("../../classes/NetplanConfigurator/NetplanConfigurator");
 const { clear } = require("console");
+const { create } = require("lodash");
 
 describe("NetplanConfigurator", () => {
   let execMockFunc;
@@ -67,6 +80,8 @@ describe("NetplanConfigurator", () => {
     let fileContent;
     let neplanConfigurator;
     let createFile;
+    let dirPath;
+    let fileName;
 
     beforeEach(() => {
       jsonFileContent = {
@@ -90,10 +105,8 @@ describe("NetplanConfigurator", () => {
       fileContent = null;
       createFile = true;
 
-      neplanConfigurator = new NetplanConfigurator(
-        netplanDirPathFromConfig,
-        netplanFileNameFromConfig
-      );
+      dirPath = netplanDirPathFromConfig;
+      fileName = netplanFileNameFromConfig;
     });
 
     let exec = async () => {
@@ -102,7 +115,9 @@ describe("NetplanConfigurator", () => {
       }
 
       if (createFile)
-        await writeFileAsync(netplanFilePath, fileContent, "utf8");
+        await writeFileAsync(path.join(dirPath, fileName), fileContent, "utf8");
+
+      neplanConfigurator = new NetplanConfigurator(dirPath, fileName);
 
       return neplanConfigurator.Load();
     };
@@ -228,6 +243,51 @@ describe("NetplanConfigurator", () => {
             dns: ["10.10.10.1", "1.1.1.1"],
           },
         ],
+      };
+
+      expect(neplanConfigurator.Payload).toEqual(expectedPayload);
+    });
+
+    it("should not throw but initilize empty interfaces - if file name is null", async () => {
+      fileName = null;
+      createFile = false;
+
+      await exec();
+
+      let expectedPayload = {
+        dirPath: dirPath,
+        fileName: fileName,
+        interfaces: [],
+      };
+
+      expect(neplanConfigurator.Payload).toEqual(expectedPayload);
+    });
+
+    it("should not throw but initilize empty interfaces - if dirPath is null", async () => {
+      dirPath = null;
+      createFile = false;
+
+      await exec();
+
+      let expectedPayload = {
+        dirPath: dirPath,
+        fileName: fileName,
+        interfaces: [],
+      };
+
+      expect(neplanConfigurator.Payload).toEqual(expectedPayload);
+    });
+
+    it("should not throw but initilize empty interfaces - if directory does not exists", async () => {
+      dirPath = "fakeDir";
+      createFile = false;
+
+      await exec();
+
+      let expectedPayload = {
+        dirPath: dirPath,
+        fileName: fileName,
+        interfaces: [],
       };
 
       expect(neplanConfigurator.Payload).toEqual(expectedPayload);
@@ -753,7 +813,7 @@ describe("NetplanConfigurator", () => {
 
       initialPayload = netplanConfigurator.Payload;
 
-      return netplanConfigurator.update(updatePayload);
+      return netplanConfigurator.Update(updatePayload);
     };
 
     it("should update netplan configurator based on its payload", async () => {
@@ -2279,6 +2339,538 @@ describe("NetplanConfigurator", () => {
       );
 
       expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+  });
+
+  describe("Save", () => {
+    let jsonFileContent;
+    let fileContent;
+    let netplanConfigurator;
+    let createFile;
+    let updateNetplanConfigurator;
+    let updatePayload;
+    let initialPayload;
+
+    beforeEach(() => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              addresses: ["10.10.10.2/24"],
+              gateway4: "10.10.10.1",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      fileContent = null;
+      createFile = true;
+
+      netplanConfigurator = new NetplanConfigurator(
+        netplanDirPathFromConfig,
+        netplanFileNameFromConfig
+      );
+
+      updateNetplanConfigurator = true;
+      updatePayload = {
+        dirPath: netplanDirPathFromConfig,
+        fileName: netplanFileNameFromConfig,
+        interfaces: [
+          {
+            name: "eth2",
+            dhcp: true,
+            optional: true,
+          },
+          {
+            name: "eth3",
+            dhcp: true,
+            optional: false,
+          },
+          {
+            name: "eth4",
+            dhcp: false,
+            optional: true,
+            ipAddress: "10.10.10.2",
+            subnetMask: "255.255.255.0",
+            gateway: "10.10.10.1",
+            dns: ["10.10.10.1", "1.1.1.1"],
+          },
+        ],
+      };
+    });
+
+    let exec = async () => {
+      if (!fileContent) {
+        fileContent = convertJSONToYaml(jsonFileContent);
+      }
+
+      if (createFile)
+        await writeFileAsync(netplanFilePath, fileContent, "utf8");
+
+      await netplanConfigurator.Load();
+
+      initialPayload = netplanConfigurator.Payload;
+
+      if (updateNetplanConfigurator) netplanConfigurator.Update(updatePayload);
+
+      return netplanConfigurator.Save();
+    };
+
+    it("should save all new configuration to neplan file", async () => {
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonFileContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth2: {
+              dhcp4: true,
+              optional: true,
+            },
+
+            eth3: {
+              dhcp4: true,
+              optional: false,
+            },
+
+            eth4: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.2/24"],
+              gateway4: "10.10.10.1",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+            },
+          },
+        },
+      };
+
+      expect(jsonFileContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - even if there is no initial file", async () => {
+      createFile = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonFileContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth2: {
+              dhcp4: true,
+              optional: true,
+            },
+
+            eth3: {
+              dhcp4: true,
+              optional: false,
+            },
+
+            eth4: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.2/24"],
+              gateway4: "10.10.10.1",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+            },
+          },
+        },
+      };
+
+      expect(jsonFileContent).toEqual(expectedContent);
+    });
+
+    it("should throw if there is no netplan dir", async () => {
+      updatePayload.dirPath = "falseDir";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        "ENOENT: no such file or directory, open 'falseDir/testConfigYamlFile.yaml'"
+      );
+    });
+
+    it("should save all new configuration to neplan file - if there are no interfaces", async () => {
+      updatePayload.interfaces = [];
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonFileContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {},
+        },
+      };
+
+      expect(jsonFileContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = true but addresses set to static", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonFileContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth2: {
+              dhcp4: true,
+              optional: true,
+            },
+
+            eth3: {
+              dhcp4: true,
+              optional: false,
+            },
+
+            eth4: {
+              dhcp4: true,
+              optional: true,
+            },
+          },
+        },
+      };
+
+      expect(jsonFileContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if netplan configurator was not initialized", async () => {
+      createFile = false;
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {},
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = false but static addresses were not set", async () => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+            },
+          },
+        },
+      };
+
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+            },
+          },
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = false but static IPAddress was not set", async () => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              gateway4: "10.10.10.1",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              gateway4: "10.10.10.1",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = false but static gateway was not set", async () => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.1/24"],
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.1/24"],
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = false but static dns was not set", async () => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.10/24"],
+              gateway4: "10.10.10.1",
+              optional: false,
+            },
+          },
+        },
+      };
+
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.10/24"],
+              gateway4: "10.10.10.1",
+              optional: false,
+            },
+          },
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+
+    it("should save all new configuration to neplan file - if one of interfaces has dhcp = false but dns are empty", async () => {
+      jsonFileContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.10/24"],
+              gateway4: "10.10.10.1",
+              optional: false,
+              nameservers: { addresses: [] },
+            },
+          },
+        },
+      };
+
+      updateNetplanConfigurator = false;
+
+      await exec();
+
+      let fileContent = await readFileAsync(netplanFilePath, "utf8");
+      expect(fileContent).toBeDefined();
+
+      let jsonContent = await convertYamlToJSON(fileContent);
+
+      let expectedContent = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              dhcp4: false,
+              optional: true,
+              addresses: ["10.10.10.10/24"],
+              gateway4: "10.10.10.1",
+              optional: false,
+            },
+          },
+        },
+      };
+
+      expect(jsonContent).toEqual(expectedContent);
+    });
+  });
+
+  describe("ApplyChanges", () => {
+    let netplanConfigurator;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+
+      netplanConfigurator = new NetplanConfigurator(
+        netplanDirPathFromConfig,
+        netplanFileNameFromConfig
+      );
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    let exec = async () => {
+      return netplanConfigurator.ApplyChanges();
+    };
+
+    it("should invoke exec with 'netplan apply'", async () => {
+      await exec();
+
+      expect(mockExec).toHaveBeenCalledTimes(1);
+      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
     });
   });
 });

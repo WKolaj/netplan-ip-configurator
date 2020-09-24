@@ -4,6 +4,7 @@ const { promisify } = require("util");
 const yaml = require("js-yaml");
 const ip = require("ip");
 const { exec } = require("child_process");
+const { stderr } = require("process");
 
 /**
  * Reads all the text in a readable stream and returns it as a string,

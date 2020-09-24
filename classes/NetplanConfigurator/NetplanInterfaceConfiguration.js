@@ -64,7 +64,7 @@ class NetplanInterfaceConfiguration {
    * @description Method for initializing Netplan Interface Configuration from interface config payload in netplan file
    * @param {JSON} interfaceConfigurationContent interface config payload in netplan file
    */
-  initFromNetplanPayload(interfaceConfigurationContent) {
+  InitFromNetplanPayload(interfaceConfigurationContent) {
     if (interfaceConfigurationContent.dhcp4) this._dhcp = true;
     else this._dhcp = false;
 
@@ -100,8 +100,8 @@ class NetplanInterfaceConfiguration {
    * @description Method for initializing from payload
    * @param {JSON} payload Payload to initialize
    */
-  initFromPayload(payload) {
-    this.update(payload);
+  InitFromPayload(payload) {
+    this.Update(payload);
   }
 
   /**
@@ -218,7 +218,7 @@ class NetplanInterfaceConfiguration {
    * @description Method for updating interface based on payload
    * @param {JSON} payload Payload to update interface
    */
-  update(payload) {
+  Update(payload) {
     let validationResult = this._validatePayload(payload);
     if (validationResult.error) throw new Error(validationResult.error.message);
 

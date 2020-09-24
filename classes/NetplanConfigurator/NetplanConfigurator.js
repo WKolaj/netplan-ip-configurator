@@ -86,7 +86,7 @@ class NetplanConfigurator {
         let networkNetplanConfiguration = new NetplanInterfaceConfiguration(
           networkEthernetName
         );
-        networkNetplanConfiguration.initFromNetplanPayload(
+        networkNetplanConfiguration.InitFromNetplanPayload(
           networkEthernetConfiguration
         );
 
@@ -135,7 +135,7 @@ class NetplanConfigurator {
 
     let filePath = path.join(this.DirPath, this.FileName);
 
-    await writeFileAsync(filePath, yamlPayload);
+    await writeFileAsync(filePath, yamlPayload, "utf8");
   }
 
   /**
@@ -192,7 +192,7 @@ class NetplanConfigurator {
    * @description Method for updating netplan configuration - DOES NOT CHANGE NETPLAN FILE AUTOMATICALLY, Throws if payload is invalid
    * @param {JSON} payload Payload to check
    */
-  update(payload) {
+  Update(payload) {
     let validationResult = this._validatePayload(payload);
     if (validationResult.error) throw new Error(validationResult.error.message);
 
@@ -204,7 +204,7 @@ class NetplanConfigurator {
 
     for (let netInterPayload of validatedPayload.interfaces) {
       let netInter = new NetplanInterfaceConfiguration(netInterPayload.name);
-      netInter.initFromPayload(netInterPayload);
+      netInter.InitFromPayload(netInterPayload);
       this._interfaces[netInter.Name] = netInter;
     }
   }
