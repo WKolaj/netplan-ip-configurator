@@ -27,16 +27,11 @@ const netplanFilePath = path.join(
 const {
   NetplanConfigurator,
 } = require("../../classes/NetplanConfigurator/NetplanConfigurator");
-const { clear } = require("console");
-const { create } = require("lodash");
 
 describe("NetplanConfigurator", () => {
   beforeEach(async () => {
     //Clear fake netplan dir
     await clearDirectoryAsync(netplanDirPathFromConfig);
-
-    //Creating mock exec func - to prevent calling netplan apply
-    execMockFunc = jest.fn();
   });
 
   describe("constructor", () => {
