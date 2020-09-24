@@ -1,6 +1,6 @@
 {
   "name": "netplan-ip-configurator",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Module for changing ip address using netplan",
   "main": "server.js",
   "directories": {
