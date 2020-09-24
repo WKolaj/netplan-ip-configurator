@@ -31,8 +31,6 @@ const { clear } = require("console");
 const { create } = require("lodash");
 
 describe("NetplanConfigurator", () => {
-  let execMockFunc;
-
   beforeEach(async () => {
     //Clear fake netplan dir
     await clearDirectoryAsync(netplanDirPathFromConfig);

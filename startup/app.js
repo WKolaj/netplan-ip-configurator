@@ -5,8 +5,6 @@ const {
 const path = require("path");
 
 const onDataInput = async (data) => {
-  console.log(data);
-
   return "Data exchanged successfully!";
 };
 
@@ -35,14 +33,15 @@ module.exports = async function (workingDirName) {
 
   //#endregion ========== INITIALIZING CONFIG ==========
 
-  //#region ========== INITIALIZING INPUT DATA MANAGER ==========
+  //#region ========== INITIALIZING NETPLAN ==========
 
-  const interProcessCommunicator = new InterProcessCommunicator();
-  interProcessCommunicator.OnDataInput = onDataInput;
-  interProcessCommunicator.OnDataOutput = onDataOutput;
-  interProcessCommunicator.start();
+  await require("./netplan")();
 
-  log.info("input data manager initialized");
+  //#endregion ========== INITIALIZING NETPLAN ==========
 
-  //#endregion ========== INITIALIZING INPUT DATA MANAGER==========
+  //#region ========== INITIALIZING INTER PROCESS COMMUNICATION ==========
+
+  await require("./interProcessCommunication")();
+
+  //#endregion ========== INITIALIZING INTER PROCESS COMMUNICATION ==========
 };

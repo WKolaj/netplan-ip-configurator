@@ -6,6 +6,8 @@ const {
   checkIfFileExistsAsync,
   removeFileOrDirectoryAsync,
   isValidJson,
+  chmodAsync,
+  chownAsync,
 } = require("../../utilities/utilities");
 const config = require("config");
 const Joi = require("joi");
@@ -53,6 +55,9 @@ class InterProcessCommunicator {
     this._socketDirPath = config.get("socketDirPath");
     this._socketFileName = config.get("socketFileName");
     this._socketFilePath = path.join(this.SocketDirPath, this.SocketFileName);
+
+    this._socketUserID = config.get("socketUserID");
+    this._socketUserGroupID = config.get("socketUserGroupID");
 
     this._comServer = null;
     this._onDataInput = null;
@@ -116,6 +121,20 @@ class InterProcessCommunicator {
   }
 
   /**
+   * @description User ID who connects to sockets
+   */
+  get SocketUserID() {
+    return this._socketUserID;
+  }
+
+  /**
+   * @description User Group ID who connects to sockets
+   */
+  get SocketUserGroupID() {
+    return this._socketUserGroupID;
+  }
+
+  /**
    * @description Method for starting inter process communication
    */
   start = async () => {
@@ -148,18 +167,18 @@ class InterProcessCommunicator {
           if (request.method === "POST") {
             //exiting if content is not a valid json
             if (!isRequestJSON(request) || !isValidJson(content)) {
-              response.code = 400;
+              response.statusCode = 400;
               return response.end("Invalid data format.");
             }
 
             let result = await self._handleDataInput(content);
-            response.statusCode = 200;
-            return response.end(JSON.stringify(result));
+            response.statusCode = result.code;
+            return response.end(JSON.stringify(result.message));
           } else if (request.method === "GET") {
             let result = await self._handleDataOutput();
-            response.statusCode = 200;
+            response.statusCode = result.code;
             response.setHeader("content-type", "application/json");
-            return response.end(JSON.stringify(result));
+            return response.end(JSON.stringify(result.message));
           } else {
             response.statusCode = 400;
             return response.end("invalid http function");
@@ -167,7 +186,18 @@ class InterProcessCommunicator {
         });
       });
 
-      this.ComServer.listen(self.SocketFilePath);
+      this.ComServer.listen(self.SocketFilePath, async () => {
+        //Mode of file should be changed - in order for other processes to access it
+        //Changing owner to user
+        await chownAsync(
+          this.SocketFilePath,
+          this.SocketUserID,
+          this.SocketUserGroupID
+        );
+
+        //Changing permissions - to only a user can access this file
+        await chmodAsync(this.SocketFilePath, "700");
+      });
     }
   };
 
@@ -179,10 +209,17 @@ class InterProcessCommunicator {
       let jsonData = JSON.parse(data);
 
       //Firing method 'OnDataInput' event on the end of data collecting
-      if (this.OnDataInput) return this.OnDataInput(jsonData);
-      else return {};
+      if (this.OnDataInput) {
+        let dataToReturn = await this.OnDataInput(jsonData);
+        if (!dataToReturn || dataToReturn === {} || !dataToReturn.code) {
+          return { code: 200, message: {} };
+        }
+
+        return dataToReturn;
+      } else return { code: 200, message: {} };
     } catch (err) {
       logger.error(err.message, err);
+      return { code: 500, message: "UPS... Something went wrong..." };
     }
   };
 
@@ -191,11 +228,18 @@ class InterProcessCommunicator {
    */
   _handleDataOutput = async () => {
     try {
-      //Firing method 'OnDataOutput' event on the end of data collecting
-      if (this.OnDataOutput) return this.OnDataOutput();
-      else return {};
+      if (this.OnDataOutput) {
+        //Firing method 'OnDataOutput' event on the end of data collecting
+        let dataToReturn = await this.OnDataOutput();
+        if (!dataToReturn || dataToReturn === {} || !dataToReturn.code) {
+          return { code: 200, message: {} };
+        }
+
+        return dataToReturn;
+      } else return { code: 200, message: {} };
     } catch (err) {
       logger.error(err.message, err);
+      return { code: 500, message: "UPS... Something went wrong..." };
     }
   };
 
