@@ -762,6 +762,14 @@ describe("NetplanConfigurator", () => {
       expect(netplanConfigurator.Payload).toEqual(updatePayload);
     });
 
+    it("should update netplan configurator based on its payload - even if netplanConfigurator was not initialized based on file", async () => {
+      createFile = false;
+
+      await exec();
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
     it("should update netplan configurator based on its payload - if interfaces are the same", async () => {
       updatePayload = {
         dirPath: "updatedTestDirPath",
@@ -1092,6 +1100,1183 @@ describe("NetplanConfigurator", () => {
       ).rejects.toBeDefined();
 
       expect(error.message).toEqual(`"interfaces" must be an array`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - name is not defined", async () => {
+      delete updatePayload.interfaces[2].name;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].name" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - name is null", async () => {
+      updatePayload.interfaces[2].name = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].name" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - name is empty string", async () => {
+      updatePayload.interfaces[2].name = "";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].name" is not allowed to be empty`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - name is not a string", async () => {
+      updatePayload.interfaces[2].name = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].name" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - optional is not defined", async () => {
+      delete updatePayload.interfaces[2].optional;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].optional" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - optional is null", async () => {
+      updatePayload.interfaces[2].optional = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].optional" must be a boolean`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - optional is not a boolean", async () => {
+      updatePayload.interfaces[2].optional = "fake";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].optional" must be a boolean`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dhcp is not defined", async () => {
+      delete updatePayload.interfaces[2].dhcp;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dhcp" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dhcp is null", async () => {
+      updatePayload.interfaces[2].dhcp = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dhcp" must be a boolean`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dhcp is not a boolean", async () => {
+      updatePayload.interfaces[2].dhcp = "fake";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dhcp" must be a boolean`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is not defined but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      delete updatePayload.interfaces[2].ipAddress;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].ipAddress" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should update netplan configurator if ipAddress is not defined but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      delete updatePayload.interfaces[2].ipAddress;
+
+      await exec();
+
+      //After setting dhcp to true other static parameters should be not visible
+      delete updatePayload.interfaces[2].ipAddress;
+      delete updatePayload.interfaces[2].subnetMask;
+      delete updatePayload.interfaces[2].dns;
+      delete updatePayload.interfaces[2].gateway;
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is null but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].ipAddress = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is null but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].ipAddress = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is not a string but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].ipAddress = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is not a string but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].ipAddress = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is not a valid ip but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].ipAddress = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is not a valid ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].ipAddress = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is ip with CIDR but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].ipAddress = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - ipAddress is ip with CIDR ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].ipAddress = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].ipAddress" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is not defined but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      delete updatePayload.interfaces[2].subnetMask;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].subnetMask" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should update netplan configurator if subnetMask is not defined but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      delete updatePayload.interfaces[2].subnetMask;
+      await exec();
+
+      delete updatePayload.interfaces[2].ipAddress;
+      delete updatePayload.interfaces[2].subnetMask;
+      delete updatePayload.interfaces[2].gateway;
+      delete updatePayload.interfaces[2].dns;
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is null but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].subnetMask = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is null but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].subnetMask = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is not a string but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].subnetMask = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is not a string but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].subnetMask = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a string`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is not a valid ip but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].subnetMask = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is not a valid ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].subnetMask = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is ip with CIDR but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].subnetMask = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - subnetMask is ip with CIDR ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].subnetMask = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].subnetMask" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is not defined but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      delete updatePayload.interfaces[2].gateway;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].gateway" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should update netplan configurator if gateway is not defined but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      delete updatePayload.interfaces[2].gateway;
+      await exec();
+
+      delete updatePayload.interfaces[2].ipAddress;
+      delete updatePayload.interfaces[2].subnetMask;
+      delete updatePayload.interfaces[2].gateway;
+      delete updatePayload.interfaces[2].dns;
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is null but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].gateway = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].gateway" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is null but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].gateway = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].gateway" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is not a string but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].gateway = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].gateway" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is not a string but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].gateway = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].gateway" must be a string`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is not a valid ip but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].gateway = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].gateway" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is not a valid ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].gateway = "1234";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].gateway" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is ip with CIDR but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].gateway = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].gateway" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - gateway is ip with CIDR ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].gateway = "192.168.0.10/24";
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].gateway" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is not defined but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      delete updatePayload.interfaces[2].dns;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dns" is required`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should update netplan configurator if dns is not defined but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      delete updatePayload.interfaces[2].dns;
+      await exec();
+
+      delete updatePayload.interfaces[2].ipAddress;
+      delete updatePayload.interfaces[2].subnetMask;
+      delete updatePayload.interfaces[2].gateway;
+      delete updatePayload.interfaces[2].dns;
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should update netplan configurator if dns is an empty array but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].dns = [];
+      await exec();
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should update netplan configurator if dns is an empty array but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].dns = [];
+      await exec();
+
+      delete updatePayload.interfaces[2].ipAddress;
+      delete updatePayload.interfaces[2].subnetMask;
+      delete updatePayload.interfaces[2].gateway;
+      delete updatePayload.interfaces[2].dns;
+
+      expect(netplanConfigurator.Payload).toEqual(updatePayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is null but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].dns = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dns" must be an array`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is null but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].dns = null;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dns" must be an array`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is not a string but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].dns = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dns" must be an array`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is not a string but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].dns = 1234;
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(`"interfaces[2].dns" must be an array`);
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is not a valid ip but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].dns = ["1234"];
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].dns[0]" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is not a valid ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].dns = ["1234"];
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].dns[0]" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is ip with CIDR but dhcp is false", async () => {
+      updatePayload.interfaces[2].dhcp = false;
+      updatePayload.interfaces[2].dns = ["192.168.0.10/24"];
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].dns[0]" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
+
+      expect(netplanConfigurator.Payload).toEqual(initialPayload);
+    });
+
+    it("should not update netplan configurator if one of interface is invalid - dns is ip with CIDR ip but dhcp is true", async () => {
+      updatePayload.interfaces[2].dhcp = true;
+      updatePayload.interfaces[2].dns = ["192.168.0.10/24"];
+
+      let error = null;
+
+      await expect(
+        new Promise(async (resolve, reject) => {
+          try {
+            await exec();
+            return resolve(true);
+          } catch (err) {
+            error = err;
+            return reject(err);
+          }
+        })
+      ).rejects.toBeDefined();
+
+      expect(error.message).toEqual(
+        `"interfaces[2].dns[0]" must be a valid ip address of one of the following versions [ipv4] with a forbidden CIDR`
+      );
 
       expect(netplanConfigurator.Payload).toEqual(initialPayload);
     });
