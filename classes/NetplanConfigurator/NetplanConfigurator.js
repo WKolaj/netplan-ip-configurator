@@ -21,7 +21,10 @@ const Joi = require("joi");
 const NetplanConfiguratorSchema = Joi.object({
   dirPath: Joi.string().min(1).required(),
   fileName: Joi.string().min(1).required(),
-  interfaces: Joi.array().items(NetplanInterfaceConfigurationSchema).required(),
+  interfaces: Joi.array()
+    .items(NetplanInterfaceConfigurationSchema)
+    .unique("name")
+    .required(),
 });
 
 /**

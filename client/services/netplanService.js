@@ -105,6 +105,11 @@ module.exports.setInterface = async (interfaceName, interfaceObject) => {
     let interfacesObject = await module.exports.getInterfaces();
     if (interfacesObject === null) return null;
 
+    let currentInterfaceSettings = interfacesObject[interfaceName];
+    if (!currentInterfaceSettings) return null;
+
+    if (interfaceName !== interfaceObject.name) return null;
+
     interfacesObject[interfaceName] = interfaceObject;
 
     let response = await module.exports.setInterfaces(interfacesObject);

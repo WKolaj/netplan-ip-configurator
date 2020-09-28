@@ -1225,6 +1225,47 @@ describe("Inter Process Communication", () => {
       expect(mockExec).not.toHaveBeenCalled();
     });
 
+    it("should not update and return actual netplan interfaces configuration - if there are interfaces with the same name", async () => {
+      updatePayload = [
+        {
+          name: "eth2",
+          dhcp: true,
+          optional: true,
+        },
+        {
+          name: "eth3",
+          dhcp: true,
+          optional: false,
+        },
+        {
+          name: "eth3",
+          dhcp: false,
+          optional: true,
+          ipAddress: "10.10.10.2",
+          subnetMask: "255.255.255.0",
+          gateway: "10.10.10.1",
+          dns: ["10.10.10.1", "1.1.1.1"],
+        },
+      ];
+
+      let result = await exec();
+
+      expect(result).toEqual('"Invalid data format"');
+
+      //Checking if netplan content has been updated;
+      let netplanContent = await netplanService.getSettings();
+      expect(netplanContent).toEqual(initialPayload);
+
+      //Checking if netplan file has been updated properly
+      let netplanFileContent = await readFileAsync(netplanFilePath, "utf8");
+      let netplanFileContentJSON = convertYamlToJSON(netplanFileContent);
+
+      expect(netplanFileContentJSON).toEqual(initialNetplanFileContentJSON);
+
+      //checking if netplan command was invoked
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+
     it("should not update and return actual netplan interfaces configuration - if interface does not have dhcp", async () => {
       updatePayload = [
         {
