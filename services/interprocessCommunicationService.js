@@ -59,3 +59,11 @@ module.exports.init = async () => {
 
   await interProcessCommunicator.start();
 };
+
+module.exports.stopAndDelete = async () => {
+  //Return immidiately if initialized several times
+  if (!interProcessCommunicator) return;
+  await interProcessCommunicator.stop();
+
+  interProcessCommunicator = null;
+};

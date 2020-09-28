@@ -10,6 +10,7 @@ module.exports.sendHTTPGetToSocket = async (socketPath, route, headers) => {
         headers: headers,
       };
 
+      //creating callback
       let callback = function (response) {
         var str = "";
 
@@ -26,7 +27,15 @@ module.exports.sendHTTPGetToSocket = async (socketPath, route, headers) => {
         });
       };
 
-      http.request(options, callback).end();
+      //Creating request
+      let request = http.request(options, callback);
+
+      //in case request throws an error
+      request.on("error", function (err) {
+        return reject(err);
+      });
+
+      request.end();
     } catch (err) {
       return reject(err);
     }
@@ -63,7 +72,15 @@ module.exports.sendHTTPPostToSocket = async (
         });
       };
 
-      http.request(options, callback).end(body);
+      //Creating request
+      let request = http.request(options, callback);
+
+      //in case request throws an error
+      request.on("error", function (err) {
+        return reject(err);
+      });
+
+      request.end(body);
     } catch (err) {
       return reject(err);
     }

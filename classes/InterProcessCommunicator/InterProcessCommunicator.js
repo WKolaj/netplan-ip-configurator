@@ -202,6 +202,20 @@ class InterProcessCommunicator {
   };
 
   /**
+   * @description Method for stopping inter process communication
+   */
+  stop = async () => {
+    return new Promise(async (resolve, reject) => {
+      if (this.ComServer) {
+        this.ComServer.close((err) => {
+          if (err) return reject(err);
+          else return resolve();
+        });
+      }
+    });
+  };
+
+  /**
    * @description Method for handling data input - on the end of exchange process - POST
    */
   _handleDataInput = async (data) => {
