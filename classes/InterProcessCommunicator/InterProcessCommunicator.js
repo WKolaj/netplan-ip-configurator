@@ -211,7 +211,7 @@ class InterProcessCommunicator {
           if (err) return reject(err);
           else return resolve();
         });
-      }
+      } else return resolve();
     });
   };
 
