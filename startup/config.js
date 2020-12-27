@@ -19,6 +19,7 @@ module.exports = async function () {
   throwIfConfigDoesNotExist("socketUserGroupID");
   throwIfConfigDoesNotExist("socketDirPath");
   throwIfConfigDoesNotExist("appAuthToken");
+  throwIfConfigDoesNotExist("netplanApplyCommand");
 
   //#endregion ========== CUSTOM CONFIG PROPERTIES ==========
 
