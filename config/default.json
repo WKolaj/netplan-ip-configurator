@@ -4,6 +4,7 @@
   "socketUserID": 1000,
   "socketUserGroupID": 1000,
   "socketDirPath": "ipc",
+  "netplanApplyCommand": "netplan apply",
   "socketFileName": "data.socket",
   "logging": {
     "logActions": true,

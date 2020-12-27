@@ -4,6 +4,7 @@
   "socketDirPath": "__testDir/ipc",
   "socketFileName": "data.socket",
   "appAuthToken": "testAppToken",
+  "netplanApplyCommand": "testApplyCommand",
   "logging": {
     "logActions": true,
     "info": {

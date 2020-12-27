@@ -36,10 +36,15 @@ class NetplanConfigurator {
    * @param {String} dirPath Path do netplan directory
    * @param {String} fileName File name with configuration
    */
-  constructor(dirPath = "/etc/netplan", fileName = "00-installer-config.yaml") {
+  constructor(
+    dirPath = "/etc/netplan",
+    fileName = "00-installer-config.yaml",
+    applyCommand = "netplan apply"
+  ) {
     this._dirPath = dirPath;
     this._fileName = fileName;
     this._interfaces = {};
+    this._applyCommand = applyCommand;
   }
 
   /**
@@ -61,6 +66,13 @@ class NetplanConfigurator {
    */
   get Interfaces() {
     return this._interfaces;
+  }
+
+  /**
+   * @description Command invoked when applied settings
+   */
+  get ApplyCommand() {
+    return this._applyCommand;
   }
 
   /**
@@ -145,7 +157,7 @@ class NetplanConfigurator {
    * @description Method for applying changes to netplan - calls command "netplan appy"
    */
   async ApplyChanges() {
-    await execAsync("netplan apply");
+    await execAsync(this.ApplyCommand);
   }
 
   /**

@@ -353,7 +353,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if netplan file does not exist", async () => {
@@ -427,7 +427,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if netplan interfaces do not exist", async () => {
@@ -501,7 +501,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if netplan file is empty", async () => {
@@ -575,7 +575,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if netplan interfaces had been previously updated", async () => {
@@ -676,8 +676,8 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(2);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
-      expect(mockExec.mock.calls[1][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
+      expect(mockExec.mock.calls[1][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if interfaces are empty", async () => {
@@ -715,7 +715,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if one of interface has dhcp and other static parameters", async () => {
@@ -820,7 +820,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should not update and return actual netplan interfaces configuration - if token was not added in headers", async () => {
@@ -1033,7 +1033,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should update and return actual netplan interfaces configuration - if interface has dhcp to true and other static parameters", async () => {
@@ -1099,7 +1099,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should not update and return actual netplan interfaces configuration - if interface does not have name", async () => {
@@ -1974,7 +1974,7 @@ describe("Inter Process Communication", () => {
       //checking if netplan command was invoked
       expect(mockExec).toHaveBeenCalledTimes(1);
 
-      expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+      expect(mockExec.mock.calls[0][0]).toEqual("testApplyCommand");
     });
 
     it("should not update and return actual netplan interfaces configuration - if interface has dhcp set to false and no dns", async () => {

@@ -11,10 +11,12 @@ module.exports.init = async () => {
 
   let netplanDirPath = config.get("netplanDirPath");
   let netplanFileName = config.get("netplanFileName");
+  let netplanApplyCommand = config.get("netplanApplyCommand");
 
   netplanConfigurator = new NetplanConfigurator(
     netplanDirPath,
-    netplanFileName
+    netplanFileName,
+    netplanApplyCommand
   );
 
   await netplanConfigurator.Load();

@@ -2841,14 +2841,11 @@ describe("NetplanConfigurator", () => {
 
   describe("ApplyChanges", () => {
     let netplanConfigurator;
+    let applyCommand;
 
     beforeEach(() => {
       jest.clearAllMocks();
-
-      netplanConfigurator = new NetplanConfigurator(
-        netplanDirPathFromConfig,
-        netplanFileNameFromConfig
-      );
+      applyCommand = "netplan apply";
     });
 
     afterEach(() => {
@@ -2856,6 +2853,11 @@ describe("NetplanConfigurator", () => {
     });
 
     let exec = async () => {
+      netplanConfigurator = new NetplanConfigurator(
+        netplanDirPathFromConfig,
+        netplanFileNameFromConfig,
+        applyCommand
+      );
       return netplanConfigurator.ApplyChanges();
     };
 
@@ -2864,6 +2866,14 @@ describe("NetplanConfigurator", () => {
 
       expect(mockExec).toHaveBeenCalledTimes(1);
       expect(mockExec.mock.calls[0][0]).toEqual("netplan apply");
+    });
+
+    it("should invoke exec with command given in argument of constructor", async () => {
+      applyCommand = "testCommand";
+      await exec();
+
+      expect(mockExec).toHaveBeenCalledTimes(1);
+      expect(mockExec.mock.calls[0][0]).toEqual("testCommand");
     });
   });
 });
