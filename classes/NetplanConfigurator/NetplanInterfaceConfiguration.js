@@ -13,6 +13,11 @@ const ipV4Schema = Joi.string().ip({
 });
 
 /**
+ * @description IP Address set when you don't want to use gateway communication via interface
+ */
+const noGatewayIPAddress = "0.0.0.0";
+
+/**
  * @description Schema for netplan interface configuration
  */
 const NetplanInterfaceConfigurationSchema = Joi.object({
@@ -80,8 +85,12 @@ class NetplanInterfaceConfiguration {
       }
     }
 
-    if (interfaceConfigurationContent.gateway4) {
+    if (interfaceConfigurationContent.gateway4 != null) {
       this._gateway = interfaceConfigurationContent.gateway4;
+    }
+    //If there is no gateway but dhcp is off - static IP - gateway address should be treated as 0.0.0.0
+    else if (!interfaceConfigurationContent.dhcp4) {
+      this._gateway = noGatewayIPAddress;
     }
 
     if (
@@ -175,7 +184,12 @@ class NetplanInterfaceConfiguration {
       payloadToReturn.addresses = [cidr];
     }
 
-    if (this.Gateway && this.Gateway != "")
+    //Adding gateway only if it is not set to the value of noGatewayIPAddress - fixed issue with setting 0.0.0.0 even if interface should not be used for gateway communication
+    if (
+      this.Gateway &&
+      this.Gateway != "" &&
+      this.Gateway !== noGatewayIPAddress
+    )
       payloadToReturn.gateway4 = this.Gateway;
 
     if (this.DNS && this.DNS.length > 0)

@@ -1,5 +1,4 @@
 const { getInterfaces } = require("../../../client/services/netplanService");
-const { isNull } = require("util");
 
 describe("NetplanService - client", () => {
   let child_proccess;
@@ -153,6 +152,75 @@ describe("NetplanService - client", () => {
       });
     });
 
+    it("should return actual netplan interfaces configuration object - if there is no gateway4 in netplan file", async () => {
+      initialNetplanFileContentJSON = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              addresses: ["10.10.10.2/24"],
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      let result = await exec();
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        eth1: { name: "eth1", dhcp: true, optional: true },
+        eth2: {
+          name: "eth2",
+          dhcp: false,
+          optional: false,
+          ipAddress: "10.10.10.2",
+          subnetMask: "255.255.255.0",
+          gateway: "0.0.0.0",
+          dns: ["10.10.10.1", "1.1.1.1"],
+        },
+      });
+    });
+
+    it("should return actual netplan interfaces configuration object - if there is gateway4 in file set to 0.0.0.0", async () => {
+      initialNetplanFileContentJSON = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              addresses: ["10.10.10.2/24"],
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              gateway4: "0.0.0.0",
+              optional: false,
+            },
+          },
+        },
+      };
+
+      let result = await exec();
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        eth1: { name: "eth1", dhcp: true, optional: true },
+        eth2: {
+          name: "eth2",
+          dhcp: false,
+          optional: false,
+          ipAddress: "10.10.10.2",
+          subnetMask: "255.255.255.0",
+          gateway: "0.0.0.0",
+          dns: ["10.10.10.1", "1.1.1.1"],
+        },
+      });
+    });
+
     it("should return actual netplan interfaces configuration object - if there are no interfaces", async () => {
       initialNetplanFileContentJSON.network.ethernets = {};
       let result = await exec();
@@ -277,6 +345,69 @@ describe("NetplanService - client", () => {
         ipAddress: "10.10.10.2",
         subnetMask: "255.255.255.0",
         gateway: "10.10.10.1",
+        dns: ["10.10.10.1", "1.1.1.1"],
+      });
+    });
+
+    it("should return actual netplan interface configuration object - if gateway is not set in file", async () => {
+      initialNetplanFileContentJSON = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              addresses: ["10.10.10.2/24"],
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      let result = await exec();
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        name: "eth2",
+        dhcp: false,
+        optional: false,
+        ipAddress: "10.10.10.2",
+        subnetMask: "255.255.255.0",
+        gateway: "0.0.0.0",
+        dns: ["10.10.10.1", "1.1.1.1"],
+      });
+    });
+
+    it("should return actual netplan interface configuration object - if gateway is set to 0.0.0.0 in file", async () => {
+      initialNetplanFileContentJSON = {
+        network: {
+          version: 2,
+          ethernets: {
+            eth1: {
+              dhcp4: true,
+              optional: true,
+            },
+            eth2: {
+              addresses: ["10.10.10.2/24"],
+              gateway4: "0.0.0.0",
+              nameservers: { addresses: ["10.10.10.1", "1.1.1.1"] },
+              optional: false,
+            },
+          },
+        },
+      };
+
+      let result = await exec();
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        name: "eth2",
+        dhcp: false,
+        optional: false,
+        ipAddress: "10.10.10.2",
+        subnetMask: "255.255.255.0",
+        gateway: "0.0.0.0",
         dns: ["10.10.10.1", "1.1.1.1"],
       });
     });
@@ -421,6 +552,40 @@ describe("NetplanService - client", () => {
     };
 
     it("should update interfaces and return new netplan interfaces configuration object", async () => {
+      let result = await exec();
+
+      let actualInterfaceConfig = await netplanClientService.getInterfaces();
+
+      expect(actualInterfaceConfig).toBeDefined();
+      expect(actualInterfaceConfig).toEqual(newPayload);
+
+      expect(result).toBeDefined();
+      expect(result).toEqual(newPayload);
+    });
+
+    it("should update interfaces and return new netplan interfaces configuration object - id gateway is set to 0.0.0.0", async () => {
+      newPayload = {
+        eth2: { name: "eth2", dhcp: true, optional: true },
+        eth3: {
+          name: "eth3",
+          dhcp: false,
+          optional: false,
+          ipAddress: "10.10.10.2",
+          subnetMask: "255.255.255.0",
+          gateway: "0.0.0.0",
+          dns: ["10.10.10.1", "1.1.1.1"],
+        },
+        eth4: {
+          name: "eth4",
+          dhcp: false,
+          optional: true,
+          ipAddress: "10.10.11.2",
+          subnetMask: "255.255.255.0",
+          gateway: "10.10.11.1",
+          dns: ["10.10.11.1", "1.1.1.1"],
+        },
+      };
+
       let result = await exec();
 
       let actualInterfaceConfig = await netplanClientService.getInterfaces();
@@ -2415,6 +2580,32 @@ describe("NetplanService - client", () => {
     };
 
     it("should update interface and return new netplan interfaces configuration object", async () => {
+      let result = await exec();
+
+      expect(result).toBeDefined();
+      expect(result).toEqual(newPayload);
+
+      let actualInterfaceConfig = await netplanClientService.getInterfaces();
+
+      //Copying object
+      let expectedPayload = JSON.parse(JSON.stringify(initialPayload));
+      expectedPayload[interfaceName] = newPayload;
+
+      expect(actualInterfaceConfig).toBeDefined();
+      expect(actualInterfaceConfig).toEqual(expectedPayload);
+    });
+
+    it("should update interface and return new netplan interfaces configuration object - if gateway is set to 0.0.0.0", async () => {
+      newPayload = {
+        name: "eth2",
+        dhcp: false,
+        optional: true,
+        ipAddress: "11.10.10.2",
+        subnetMask: "255.255.0.0",
+        gateway: "0.0.0.0",
+        dns: ["11.10.10.1", "2.2.2.2"],
+      };
+
       let result = await exec();
 
       expect(result).toBeDefined();
